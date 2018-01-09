@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
 
         textInputLayout = findViewById(R.id.username);
 
-        mRootRef = FirebaseDatabase.getInstance().getReference().child("users");
+        mRootRef = FirebaseDatabase.getInstance().getReference().child("Users");
 
     }
 

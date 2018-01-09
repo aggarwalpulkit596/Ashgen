@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -15,6 +16,7 @@ import android.widget.Toast;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -24,6 +26,8 @@ import com.theartofdev.edmodo.cropper.CropImageView;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -41,12 +45,14 @@ public class UserData extends AppCompatActivity {
     @BindView(R.id.lastname)
     TextInputLayout lastName;
 
-    private DatabaseReference mRootref;
+    private DatabaseReference mUsersref;
     private StorageReference mStorageRef;
 
     private ProgressDialog mProgessDialog;
+    private ProgressDialog mRegProcess;
 
-    private String username , download_url, thumb_download_url;
+
+    private String username, download_url="default", thumb_download_url="default";
 
 
     @Override
@@ -56,10 +62,12 @@ public class UserData extends AppCompatActivity {
         ButterKnife.bind(this);
 
         username = getIntent().getStringExtra("username");
+        mRegProcess = new ProgressDialog(this);
 
         userName.setText(username);
 
         mStorageRef = FirebaseStorage.getInstance().getReference();
+        mUsersref = FirebaseDatabase.getInstance().getReference().child("Users");
     }
 
     public void SetUserImage(View view) {
@@ -68,7 +76,7 @@ public class UserData extends AppCompatActivity {
                 .setAspectRatio(1, 1)
                 .setGuidelines(CropImageView.Guidelines.ON)
                 .setMinCropWindowSize(500, 500)
-                 .start(UserData.this);
+                .start(UserData.this);
     }
 
 
@@ -148,15 +156,38 @@ public class UserData extends AppCompatActivity {
                 });
 
 
-            }else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
+            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
                 Exception error = result.getError();
             }
         }
     }
 
     public void startChatRoom(View view) {
-        Intent i = new Intent(UserData.this, ChatRoom.class);
-        i.putExtra("username",username);
-        startActivity(i);
+
+        if (!TextUtils.isEmpty(firstName.getEditText().getText().toString()) || !TextUtils.isEmpty(lastName.getEditText().getText().toString())) {
+            mRegProcess.setTitle("Registering User");
+            mRegProcess.setMessage("PLease Wait...");
+            mRegProcess.setCanceledOnTouchOutside(false);
+            mRegProcess.show();
+
+            Map<String, String> userMap = new HashMap<>();
+            userMap.put("first_name", firstName.getEditText().getText().toString());
+            userMap.put("last_name", lastName.getEditText().getText().toString());
+            userMap.put("image", download_url);
+            userMap.put("thumb_image", thumb_download_url);
+
+            mUsersref.child(username).setValue(userMap).addOnCompleteListener(new OnCompleteListener<Void>() {
+                @Override
+                public void onComplete(@NonNull Task<Void> task) {
+                    mRegProcess.dismiss();
+                    Intent i = new Intent(UserData.this, ChatRoom.class);
+                    i.putExtra("username", username);
+                    startActivity(i);
+                    finish();
+                }
+            });
+
+
+        }
     }
 }

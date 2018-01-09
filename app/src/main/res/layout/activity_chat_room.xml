@@ -53,6 +53,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1.5"
             android:alpha="0.5"
+            android:onClick="sendMessage"
             android:background="@android:color/white"
             android:padding="10dp"
             app:srcCompat="@drawable/ic_send_black_24dp" />
